@@ -119,7 +119,6 @@ void CDeepSeekPlugin::DoFetch()
 
         m_item.UpdateDisplayText(currentBalance, consumption, m_config.show_consumption);
         m_lastBalance = currentBalance;
-        m_hasError = false;
         m_lastFetchSystemTime = std::chrono::system_clock::now();
 
         auto tt = std::chrono::system_clock::to_time_t(m_lastFetchSystemTime);
@@ -146,7 +145,6 @@ void CDeepSeekPlugin::DoFetch()
             m_tooltipCache = tipBuf;
         }
     } else {
-        m_hasError = true;
         if (m_lastBalance < 0) {
             m_item.SetStatusText(FetchResultToString(result));
         } else {

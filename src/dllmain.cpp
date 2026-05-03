@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include "DeepSeekPlugin.h"
 
 BOOL APIENTRY DllMain(HMODULE, DWORD, LPVOID)
