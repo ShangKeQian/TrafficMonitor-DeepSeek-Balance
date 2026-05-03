@@ -167,14 +167,54 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     INITCOMMONCONTROLSEX icex = { sizeof(icex), ICC_UPDOWN_CLASS };
     InitCommonControlsEx(&icex);
 
+    struct DialogCtx {
+        DeepSeekConfig* cfg;
+        bool changed = false;
+    } ctx;
+    ctx.cfg = &m_config;
+
     static bool classRegistered = false;
     if (!classRegistered) {
         WNDCLASSEXW wc = {};
         wc.cbSize = sizeof(wc);
-        wc.lpfnWndProc = DefWindowProcW;
         wc.hInstance = GetModuleHandle(nullptr);
         wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
         wc.lpszClassName = L"DeepSeekConfigDlg";
+        wc.lpfnWndProc = [](HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT {
+            DialogCtx* pCtx = nullptr;
+            if (msg == WM_NCCREATE) {
+                pCtx = (DialogCtx*)((CREATESTRUCT*)lParam)->lpCreateParams;
+                SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pCtx);
+            } else {
+                pCtx = (DialogCtx*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            }
+
+            if (msg == WM_COMMAND) {
+                if (LOWORD(wParam) == IDOK) {
+                    // 读取控件值
+                    wchar_t keyBuf[512], intervalBuf[32];
+                    GetDlgItemTextW(hWnd, 101, keyBuf, 512);
+                    GetDlgItemTextW(hWnd, 102, intervalBuf, 32);
+                    pCtx->cfg->api_key = keyBuf;
+                    pCtx->cfg->refresh_interval = _wtoi(intervalBuf);
+                    if (pCtx->cfg->refresh_interval < 10) pCtx->cfg->refresh_interval = 10;
+                    pCtx->cfg->show_consumption =
+                        (SendDlgItemMessage(hWnd, 104, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                    pCtx->changed = true;
+                    DestroyWindow(hWnd);
+                    return 0;
+                }
+                if (LOWORD(wParam) == IDCANCEL) {
+                    DestroyWindow(hWnd);
+                    return 0;
+                }
+            }
+            if (msg == WM_CLOSE) {
+                DestroyWindow(hWnd);
+                return 0;
+            }
+            return DefWindowProcW(hWnd, msg, wParam, lParam);
+        };
         if (RegisterClassExW(&wc))
             classRegistered = true;
     }
@@ -182,7 +222,7 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     HWND hDlg = CreateWindowExW(0, L"DeepSeekConfigDlg", L"DeepSeek 插件设置",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
         CW_USEDEFAULT, CW_USEDEFAULT, 340, 230,
-        (HWND)hParent, nullptr, GetModuleHandle(nullptr), nullptr);
+        (HWND)hParent, nullptr, GetModuleHandle(nullptr), &ctx);
 
     if (!hDlg) return OR_OPTION_NOT_PROVIDED;
 
@@ -209,47 +249,20 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
     ShowWindow(hDlg, SW_SHOW);
 
-    auto applyConfig = [&]() {
-        wchar_t keyBuf[512], intervalBuf[32];
-        GetDlgItemTextW(hDlg, 101, keyBuf, 512);
-        GetDlgItemTextW(hDlg, 102, intervalBuf, 32);
-        m_config.api_key = keyBuf;
-        m_config.refresh_interval = _wtoi(intervalBuf);
-        if (m_config.refresh_interval < 10) m_config.refresh_interval = 10;
-        m_config.show_consumption =
-            (SendDlgItemMessage(hDlg, 104, BM_GETCHECK, 0, 0) == BST_CHECKED);
-    };
-
-    bool changed = false;
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0) > 0) {
         if (msg.hwnd == hDlg || IsChild(hDlg, msg.hwnd)) {
             if (IsDialogMessage(hDlg, &msg))
                 continue;
         }
-
-        if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE) {
-            break;
-        }
-        if (msg.message == WM_COMMAND && LOWORD(msg.wParam) == IDOK) {
-            applyConfig();
-            changed = true;
-            break;
-        }
-        if (msg.message == WM_COMMAND && LOWORD(msg.wParam) == IDCANCEL) {
-            break;
-        }
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-
         if (!IsWindow(hDlg))
             break;
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 
-    DestroyWindow(hDlg);
-
-    if (changed) SaveSettings();
-    return changed ? OR_OPTION_CHANGED : OR_OPTION_UNCHANGED;
+    if (ctx.changed) SaveSettings();
+    return ctx.changed ? OR_OPTION_CHANGED : OR_OPTION_UNCHANGED;
 }
 
 const wchar_t* CDeepSeekPlugin::GetInfo(PluginInfoIndex index)
