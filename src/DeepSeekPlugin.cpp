@@ -304,6 +304,7 @@ void CDeepSeekPlugin::OnInitialize(ITrafficMonitor* pApp)
 {
     m_pApp = pApp;
     LoadSettings();
+    m_item.SetLabelText(m_config.label_text);
 }
 
 void CDeepSeekPlugin::RequestImmediateRefresh()
@@ -325,4 +326,5 @@ void CDeepSeekPlugin::LoadSettings()
 void CDeepSeekPlugin::SaveSettings()
 {
     SaveConfig(m_config, m_iniPath.c_str());
+    m_item.SetLabelText(m_config.label_text);
 }
