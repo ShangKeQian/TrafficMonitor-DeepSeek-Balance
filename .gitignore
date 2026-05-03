@@ -20,6 +20,12 @@ x86/
 Thumbs.db
 Desktop.ini
 
+# CMake build directory
+build/
+
+# Claude Code local config
+.claude/
+
 # IDE
 .idea/
 *.swp
