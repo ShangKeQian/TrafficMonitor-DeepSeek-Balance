@@ -103,8 +103,6 @@ void CDeepSeekPlugin::DataRequired()
 
 void CDeepSeekPlugin::DoFetch()
 {
-    m_item.SetLabelText(m_config.label_text);
-
     if (m_config.api_key.empty()) {
         m_item.SetStatusText(L"未配置");
         m_item.SetTooltipText(L"DeepSeek API 余额\n请右键 → 插件管理 → 选项设置 API Key");
@@ -129,7 +127,7 @@ void CDeepSeekPlugin::DoFetch()
                 consumption = m_lastBalance - currentBalance;
         }
 
-        m_item.UpdateDisplayText(currentBalance, consumption, m_config.show_consumption);
+        m_item.UpdateDisplayText(m_config.label_text, currentBalance, consumption, m_config.show_consumption);
         m_lastBalance = currentBalance;
         m_lastFetchSystemTime = std::chrono::system_clock::now();
 
@@ -304,7 +302,6 @@ void CDeepSeekPlugin::OnInitialize(ITrafficMonitor* pApp)
 {
     m_pApp = pApp;
     LoadSettings();
-    m_item.SetLabelText(m_config.label_text);
 }
 
 void CDeepSeekPlugin::RequestImmediateRefresh()
@@ -326,5 +323,4 @@ void CDeepSeekPlugin::LoadSettings()
 void CDeepSeekPlugin::SaveSettings()
 {
     SaveConfig(m_config, m_iniPath.c_str());
-    m_item.SetLabelText(m_config.label_text);
 }

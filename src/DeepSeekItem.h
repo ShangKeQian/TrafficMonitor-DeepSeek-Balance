@@ -11,8 +11,7 @@ class CDeepSeekItem : public IPluginItem
 public:
     CDeepSeekItem(CDeepSeekPlugin* owner);
 
-    void SetLabelText(const std::wstring& text);
-    void UpdateDisplayText(double balance, double consumption, bool show_consumption);
+    void UpdateDisplayText(const std::wstring& label, double balance, double consumption, bool show_consumption);
     void SetStatusText(const wchar_t* text);
     void SetTooltipText(const std::wstring& text);
     bool IsRefreshRequested() const { return m_requestRefresh.load(std::memory_order_acquire); }
