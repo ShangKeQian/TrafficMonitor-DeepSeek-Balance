@@ -1,0 +1,25 @@
+# Build output
+Debug/
+Release/
+x64/
+x86/
+*.obj
+*.exe
+*.dll
+*.ilk
+*.pdb
+*.lib
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.DotSettings
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+*.swp
