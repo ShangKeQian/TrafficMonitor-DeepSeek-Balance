@@ -16,16 +16,19 @@ void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool s
     } else {
         swprintf_s(buf, L"¥%.2f", balance);
     }
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_valueText = buf;
 }
 
 void CDeepSeekItem::SetStatusText(const wchar_t* text)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_valueText = text;
 }
 
 void CDeepSeekItem::SetTooltipText(const std::wstring& text)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_tooltipText = text;
 }
 
@@ -41,11 +44,13 @@ const wchar_t* CDeepSeekItem::GetItemId() const
 
 const wchar_t* CDeepSeekItem::GetItemLableText() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_labelText.c_str();
 }
 
 const wchar_t* CDeepSeekItem::GetItemValueText() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     return m_valueText.c_str();
 }
 

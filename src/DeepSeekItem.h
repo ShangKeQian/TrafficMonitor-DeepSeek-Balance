@@ -1,21 +1,21 @@
 #pragma once
 #include "PluginInterface.h"
 #include <string>
-#include <chrono>
+#include <atomic>
+#include <mutex>
 
-class CDeepSeekPlugin; // 前向声明
+class CDeepSeekPlugin;
 
 class CDeepSeekItem : public IPluginItem
 {
 public:
     CDeepSeekItem(CDeepSeekPlugin* owner);
 
-    // 供所属插件调用
     void UpdateDisplayText(double balance, double consumption, bool show_consumption);
     void SetStatusText(const wchar_t* text);
     void SetTooltipText(const std::wstring& text);
-    bool IsRefreshRequested() const { return m_requestRefresh; }
-    void ClearRefreshRequest() { m_requestRefresh = false; }
+    bool IsRefreshRequested() const { return m_requestRefresh.load(std::memory_order_acquire); }
+    void ClearRefreshRequest() { m_requestRefresh.store(false, std::memory_order_release); }
 
     // IPluginItem
     const wchar_t* GetItemName() const override;
@@ -27,8 +27,9 @@ public:
 
 private:
     CDeepSeekPlugin* m_owner;
+    mutable std::mutex m_mutex;
     std::wstring m_labelText;
     std::wstring m_valueText;
     std::wstring m_tooltipText;
-    bool m_requestRefresh = false;
+    std::atomic<bool> m_requestRefresh{false};
 };
