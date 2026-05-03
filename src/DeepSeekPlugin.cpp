@@ -171,8 +171,9 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     if (!classRegistered) {
         WNDCLASSEXW wc = {};
         wc.cbSize = sizeof(wc);
-        wc.lpfnWndProc = DefDlgProcW;
+        wc.lpfnWndProc = DefWindowProcW;
         wc.hInstance = GetModuleHandle(nullptr);
+        wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
         wc.lpszClassName = L"DeepSeekConfigDlg";
         if (RegisterClassExW(&wc))
             classRegistered = true;
