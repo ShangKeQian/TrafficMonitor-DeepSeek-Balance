@@ -222,20 +222,13 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
     bool changed = false;
     MSG msg;
-    BOOL ret;
-    while ((ret = GetMessage(&msg, hDlg, 0, 0)) > 0) {
-        if (IsDialogMessage(hDlg, &msg))
-            continue;
+    while (GetMessage(&msg, nullptr, 0, 0) > 0) {
+        if (msg.hwnd == hDlg || IsChild(hDlg, msg.hwnd)) {
+            if (IsDialogMessage(hDlg, &msg))
+                continue;
+        }
 
-        if (msg.message == WM_KEYDOWN && msg.wParam == VK_RETURN) {
-            applyConfig();
-            changed = true;
-            break;
-        }
         if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE) {
-            break;
-        }
-        if (msg.message == WM_CLOSE) {
             break;
         }
         if (msg.message == WM_COMMAND && LOWORD(msg.wParam) == IDOK) {
@@ -248,6 +241,9 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
         }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+
+        if (!IsWindow(hDlg))
+            break;
     }
 
     DestroyWindow(hDlg);
