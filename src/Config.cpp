@@ -1,17 +1,23 @@
 #include "Config.h"
 #include <Windows.h>
-#include <string>
+
+namespace {
+    constexpr DWORD kMaxValueLen = 2048;
+}
 
 static std::wstring ReadString(LPCWSTR path, LPCWSTR key, LPCWSTR def)
 {
-    wchar_t buf[512];
-    GetPrivateProfileStringW(L"DeepSeek", key, def, buf, 512, path);
+    wchar_t buf[kMaxValueLen];
+    DWORD len = GetPrivateProfileStringW(L"DeepSeek", key, def, buf, kMaxValueLen, path);
+    // 缓冲区不足时返回 buf_size-1，超出部分被静默截断
+    if (len >= kMaxValueLen - 1)
+        return def;
     return buf;
 }
 
-static void WriteString(LPCWSTR path, LPCWSTR key, LPCWSTR val)
+static bool WriteString(LPCWSTR path, LPCWSTR key, LPCWSTR val)
 {
-    WritePrivateProfileStringW(L"DeepSeek", key, val, path);
+    return WritePrivateProfileStringW(L"DeepSeek", key, val, path) != 0;
 }
 
 void LoadConfig(DeepSeekConfig& cfg, const wchar_t* ini_path)
