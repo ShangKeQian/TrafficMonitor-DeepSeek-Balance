@@ -25,3 +25,8 @@ set_target_properties(DeepSeekPlugin PROPERTIES
 
 # Disable CRT warnings about unsafe functions
 target_compile_definitions(DeepSeekPlugin PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+# MSVC: treat source files as UTF-8 (not system code page)
+if(MSVC)
+    target_compile_options(DeepSeekPlugin PRIVATE /utf-8)
+endif()
