@@ -141,10 +141,12 @@ void CDeepSeekPlugin::DoFetch()
             info.granted_balance,
             m_config.refresh_interval,
             timeBuf);
-        m_tooltipCache = tipBuf;
+        {
+            std::lock_guard<std::mutex> lock(m_tooltipMutex);
+            m_tooltipCache = tipBuf;
+        }
     } else {
         m_hasError = true;
-        m_lastResult = result;
         if (m_lastBalance < 0) {
             m_item.SetStatusText(FetchResultToString(result));
         } else {
@@ -152,8 +154,11 @@ void CDeepSeekPlugin::DoFetch()
             swprintf_s(buf, L"¥%.2f %s", m_lastBalance, FetchResultToString(result));
             m_item.SetStatusText(buf);
         }
-        m_tooltipCache = L"DeepSeek API 余额\n错误: ";
-        m_tooltipCache += FetchResultToString(result);
+        {
+            std::lock_guard<std::mutex> lock(m_tooltipMutex);
+            m_tooltipCache = L"DeepSeek API 余额\n错误: ";
+            m_tooltipCache += FetchResultToString(result);
+        }
     }
 
     m_item.SetTooltipText(m_tooltipCache);
@@ -164,12 +169,16 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     INITCOMMONCONTROLSEX icex = { sizeof(icex), ICC_UPDOWN_CLASS };
     InitCommonControlsEx(&icex);
 
-    WNDCLASSEXW wc = {};
-    wc.cbSize = sizeof(wc);
-    wc.lpfnWndProc = DefDlgProcW;
-    wc.hInstance = GetModuleHandle(nullptr);
-    wc.lpszClassName = L"DeepSeekConfigDlg";
-    RegisterClassExW(&wc);
+    static bool classRegistered = false;
+    if (!classRegistered) {
+        WNDCLASSEXW wc = {};
+        wc.cbSize = sizeof(wc);
+        wc.lpfnWndProc = DefDlgProcW;
+        wc.hInstance = GetModuleHandle(nullptr);
+        wc.lpszClassName = L"DeepSeekConfigDlg";
+        if (RegisterClassExW(&wc))
+            classRegistered = true;
+    }
 
     HWND hDlg = CreateWindowExW(0, L"DeepSeekConfigDlg", L"DeepSeek 插件设置",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
@@ -180,7 +189,6 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
     CreateConfigControls(hDlg);
 
-    // 初始化控件值
     SetDlgItemTextW(hDlg, 101, m_config.api_key.c_str());
     wchar_t buf[32];
     swprintf_s(buf, L"%d", m_config.refresh_interval);
@@ -189,7 +197,6 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     SendDlgItemMessage(hDlg, 104, BM_SETCHECK,
         m_config.show_consumption ? BST_CHECKED : BST_UNCHECKED, 0);
 
-    // 居中于父窗口
     if (hParent) {
         RECT rcParent, rcDlg;
         GetWindowRect((HWND)hParent, &rcParent);
@@ -203,18 +210,25 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
     ShowWindow(hDlg, SW_SHOW);
 
+    auto applyConfig = [&]() {
+        wchar_t keyBuf[512], intervalBuf[32];
+        GetDlgItemTextW(hDlg, 101, keyBuf, 512);
+        GetDlgItemTextW(hDlg, 102, intervalBuf, 32);
+        m_config.api_key = keyBuf;
+        m_config.refresh_interval = _wtoi(intervalBuf);
+        if (m_config.refresh_interval < 10) m_config.refresh_interval = 10;
+        m_config.show_consumption =
+            (SendDlgItemMessage(hDlg, 104, BM_GETCHECK, 0, 0) == BST_CHECKED);
+    };
+
     bool changed = false;
     MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0)) {
+    while (GetMessage(&msg, hDlg, 0, 0)) {
+        if (IsDialogMessage(hDlg, &msg))
+            continue;
+
         if (msg.message == WM_KEYDOWN && msg.wParam == VK_RETURN) {
-            wchar_t keyBuf[512], intervalBuf[32];
-            GetDlgItemTextW(hDlg, 101, keyBuf, 512);
-            GetDlgItemTextW(hDlg, 102, intervalBuf, 32);
-            m_config.api_key = keyBuf;
-            m_config.refresh_interval = _wtoi(intervalBuf);
-            if (m_config.refresh_interval < 10) m_config.refresh_interval = 10;
-            m_config.show_consumption =
-                (SendDlgItemMessage(hDlg, 104, BM_GETCHECK, 0, 0) == BST_CHECKED);
+            applyConfig();
             changed = true;
             DestroyWindow(hDlg);
             continue;
@@ -223,19 +237,12 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
             DestroyWindow(hDlg);
             continue;
         }
-        if (msg.message == WM_CLOSE || msg.message == WM_DESTROY) {
+        if (msg.message == WM_CLOSE) {
             DestroyWindow(hDlg);
             continue;
         }
         if (msg.message == WM_COMMAND && LOWORD(msg.wParam) == IDOK) {
-            wchar_t keyBuf[512], intervalBuf[32];
-            GetDlgItemTextW(hDlg, 101, keyBuf, 512);
-            GetDlgItemTextW(hDlg, 102, intervalBuf, 32);
-            m_config.api_key = keyBuf;
-            m_config.refresh_interval = _wtoi(intervalBuf);
-            if (m_config.refresh_interval < 10) m_config.refresh_interval = 10;
-            m_config.show_consumption =
-                (SendDlgItemMessage(hDlg, 104, BM_GETCHECK, 0, 0) == BST_CHECKED);
+            applyConfig();
             changed = true;
             DestroyWindow(hDlg);
             continue;
@@ -267,6 +274,7 @@ const wchar_t* CDeepSeekPlugin::GetInfo(PluginInfoIndex index)
 
 const wchar_t* CDeepSeekPlugin::GetTooltipInfo()
 {
+    std::lock_guard<std::mutex> lock(m_tooltipMutex);
     return m_tooltipCache.empty() ? L"DeepSeek 余额" : m_tooltipCache.c_str();
 }
 
@@ -280,6 +288,7 @@ void CDeepSeekPlugin::OnInitialize(ITrafficMonitor* pApp)
 
 void CDeepSeekPlugin::RequestImmediateRefresh()
 {
+    m_lastFetchTime = std::chrono::steady_clock::time_point();
 }
 
 void CDeepSeekPlugin::LoadSettings()

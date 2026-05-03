@@ -5,13 +5,13 @@
 #include "DeepSeekItem.h"
 #include <string>
 #include <chrono>
+#include <mutex>
 
 class CDeepSeekPlugin : public ITMPlugin
 {
 public:
     static CDeepSeekPlugin& Instance();
 
-    // 供 DeepSeekItem 使用
     void RequestImmediateRefresh();
 
     // ITMPlugin
@@ -37,14 +37,11 @@ private:
     ITrafficMonitor* m_pApp = nullptr;
     DeepSeekConfig m_config;
     CDeepSeekItem m_item;
-    BalanceInfo m_balance;
     double m_lastBalance = -1.0;
     double m_sessionStartBalance = -1.0;
-    double m_todayConsumption = 0.0;
     std::chrono::steady_clock::time_point m_lastFetchTime;
     std::chrono::system_clock::time_point m_lastFetchSystemTime;
-    bool m_hasError = false;
-    FetchResult m_lastResult = FetchResult::Ok;
+    mutable std::mutex m_tooltipMutex;
     std::wstring m_tooltipCache;
     std::wstring m_iniPath;
 };
