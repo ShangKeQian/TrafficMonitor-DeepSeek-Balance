@@ -3,7 +3,17 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "Bash(git config *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "WebFetch(domain:claude.com)",
+      "WebSearch",
+      "Bash(curl *)",
+      "Read(//c/Program Files \\(x86\\)/Microsoft Visual Studio/**)",
+      "Bash(powershell.exe -Command \"Get-Command cmake -ErrorAction SilentlyContinue; Get-Command winget -ErrorAction SilentlyContinue\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git *)",
+      "Bash(powershell.exe *)"
     ]
   },
   "model": "opus"

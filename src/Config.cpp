@@ -23,6 +23,7 @@ static bool WriteString(LPCWSTR path, LPCWSTR key, LPCWSTR val)
 void LoadConfig(DeepSeekConfig& cfg, const wchar_t* ini_path)
 {
     cfg.api_key = ReadString(ini_path, L"api_key", L"");
+    cfg.label_text = ReadString(ini_path, L"label_text", L"");
     cfg.refresh_interval = GetPrivateProfileIntW(L"DeepSeek", L"refresh_interval", 300, ini_path);
     cfg.show_consumption = GetPrivateProfileIntW(L"DeepSeek", L"show_consumption", 1, ini_path) != 0;
     cfg.consumption_period = GetPrivateProfileIntW(L"DeepSeek", L"consumption_period", 0, ini_path);
@@ -31,6 +32,7 @@ void LoadConfig(DeepSeekConfig& cfg, const wchar_t* ini_path)
 void SaveConfig(const DeepSeekConfig& cfg, const wchar_t* ini_path)
 {
     WriteString(ini_path, L"api_key", cfg.api_key.c_str());
+    WriteString(ini_path, L"label_text", cfg.label_text.c_str());
 
     wchar_t buf[32];
     _itow_s(cfg.refresh_interval, buf, 32, 10);

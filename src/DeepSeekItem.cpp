@@ -3,20 +3,25 @@
 
 CDeepSeekItem::CDeepSeekItem(CDeepSeekPlugin* owner)
     : m_owner(owner)
-    , m_labelText(L"DeepSeek")
     , m_valueText(L"等待首次刷新...")
 {
 }
 
+void CDeepSeekItem::SetLabelText(const std::wstring& text)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_labelText = text;
+}
+
 void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool show_consumption)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     wchar_t buf[128];
     if (show_consumption && consumption > 0.01) {
-        swprintf_s(buf, L"¥%.2f (-¥%.2f)", balance, consumption);
+        swprintf_s(buf, L"¥%.2f\n(-¥%.2f)", balance, consumption);
     } else {
         swprintf_s(buf, L"¥%.2f", balance);
     }
-    std::lock_guard<std::mutex> lock(m_mutex);
     m_valueText = buf;
 }
 
@@ -56,7 +61,7 @@ const wchar_t* CDeepSeekItem::GetItemValueText() const
 
 const wchar_t* CDeepSeekItem::GetItemValueSampleText() const
 {
-    return L"¥888.88 (-¥888.88)";
+    return L"¥888.88";
 }
 
 int CDeepSeekItem::OnMouseEvent(MouseEventType type, int /*x*/, int /*y*/, void* /*hWnd*/, int /*flag*/)

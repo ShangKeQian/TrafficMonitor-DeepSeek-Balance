@@ -11,43 +11,53 @@
 static void CreateConfigControls(HWND hDlg)
 {
     HINSTANCE hInst = GetModuleHandle(nullptr);
+    int y = 14;
+
+    // 显示标签
+    CreateWindowW(L"STATIC", L"显示标签（留空则无标签）:",
+        WS_CHILD | WS_VISIBLE, 14, y, 300, 16, hDlg, nullptr, hInst, nullptr);
+    y += 20;
+    CreateWindowW(L"EDIT", L"",
+        WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+        14, y, 300, 22, hDlg, (HMENU)105, hInst, nullptr);
+    y += 34;
 
     // API Key 标签
     CreateWindowW(L"STATIC", L"DeepSeek API Key:",
-        WS_CHILD | WS_VISIBLE, 14, 14, 300, 16, hDlg, nullptr, hInst, nullptr);
-
-    // API Key 输入框
+        WS_CHILD | WS_VISIBLE, 14, y, 300, 16, hDlg, nullptr, hInst, nullptr);
+    y += 20;
     CreateWindowW(L"EDIT", L"",
         WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-        14, 34, 300, 22, hDlg, (HMENU)101, hInst, nullptr);
+        14, y, 300, 22, hDlg, (HMENU)101, hInst, nullptr);
+    y += 34;
 
     // 刷新间隔标签
     CreateWindowW(L"STATIC", L"刷新间隔（秒）:",
-        WS_CHILD | WS_VISIBLE, 14, 68, 200, 16, hDlg, nullptr, hInst, nullptr);
-
-    // 刷新间隔输入框
+        WS_CHILD | WS_VISIBLE, 14, y, 200, 16, hDlg, nullptr, hInst, nullptr);
+    y += 20;
     CreateWindowW(L"EDIT", L"300",
         WS_CHILD | WS_VISIBLE | WS_BORDER | ES_NUMBER,
-        14, 88, 100, 22, hDlg, (HMENU)102, hInst, nullptr);
-
+        14, y, 100, 22, hDlg, (HMENU)102, hInst, nullptr);
     // 刷新间隔微调控件
     CreateWindowW(UPDOWN_CLASSW, nullptr,
         WS_CHILD | WS_VISIBLE | UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS,
         0, 0, 0, 0, hDlg, (HMENU)103, hInst, nullptr);
     SendDlgItemMessage(hDlg, 103, UDM_SETBUDDY, (WPARAM)GetDlgItem(hDlg, 102), 0);
+    y += 36;
 
     // 显示消耗复选框
     CreateWindowW(L"BUTTON", L"显示最近一次 API 调用消耗",
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-        14, 124, 300, 20, hDlg, (HMENU)104, hInst, nullptr);
+        14, y, 300, 20, hDlg, (HMENU)104, hInst, nullptr);
+    y += 36;
 
     // 确定 / 取消按钮
     CreateWindowW(L"BUTTON", L"确定",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        148, 160, 80, 26, hDlg, (HMENU)IDOK, hInst, nullptr);
+        148, y, 80, 26, hDlg, (HMENU)IDOK, hInst, nullptr);
     CreateWindowW(L"BUTTON", L"取消",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        236, 160, 80, 26, hDlg, (HMENU)IDCANCEL, hInst, nullptr);
+        236, y, 80, 26, hDlg, (HMENU)IDCANCEL, hInst, nullptr);
 }
 
 // ---- CDeepSeekPlugin 单例 ----
@@ -93,6 +103,8 @@ void CDeepSeekPlugin::DataRequired()
 
 void CDeepSeekPlugin::DoFetch()
 {
+    m_item.SetLabelText(m_config.label_text);
+
     if (m_config.api_key.empty()) {
         m_item.SetStatusText(L"未配置");
         m_item.SetTooltipText(L"DeepSeek API 余额\n请右键 → 插件管理 → 选项设置 API Key");
@@ -191,10 +203,11 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
             if (msg == WM_COMMAND) {
                 if (LOWORD(wParam) == IDOK) {
-                    // 读取控件值
-                    wchar_t keyBuf[512], intervalBuf[32];
+                    wchar_t keyBuf[512], intervalBuf[32], labelBuf[128];
+                    GetDlgItemTextW(hWnd, 105, labelBuf, 128);
                     GetDlgItemTextW(hWnd, 101, keyBuf, 512);
                     GetDlgItemTextW(hWnd, 102, intervalBuf, 32);
+                    pCtx->cfg->label_text = labelBuf;
                     pCtx->cfg->api_key = keyBuf;
                     pCtx->cfg->refresh_interval = _wtoi(intervalBuf);
                     if (pCtx->cfg->refresh_interval < 10) pCtx->cfg->refresh_interval = 10;
@@ -221,13 +234,14 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
     HWND hDlg = CreateWindowExW(0, L"DeepSeekConfigDlg", L"DeepSeek 插件设置",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
-        CW_USEDEFAULT, CW_USEDEFAULT, 340, 230,
+        CW_USEDEFAULT, CW_USEDEFAULT, 340, 280,
         (HWND)hParent, nullptr, GetModuleHandle(nullptr), &ctx);
 
     if (!hDlg) return OR_OPTION_NOT_PROVIDED;
 
     CreateConfigControls(hDlg);
 
+    SetDlgItemTextW(hDlg, 105, m_config.label_text.c_str());
     SetDlgItemTextW(hDlg, 101, m_config.api_key.c_str());
     wchar_t buf[32];
     swprintf_s(buf, L"%d", m_config.refresh_interval);
