@@ -3,8 +3,8 @@
 
 CDeepSeekItem::CDeepSeekItem(CDeepSeekPlugin* owner)
     : m_owner(owner)
-    , m_labelText(L"")
-    , m_valueText(L"等待首次刷新...")
+    , m_labelText(L"等待首次刷新...")
+    , m_valueText(L"")
 {
 }
 
