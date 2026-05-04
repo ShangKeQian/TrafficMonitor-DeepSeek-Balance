@@ -28,7 +28,6 @@ public:
 private:
     CDeepSeekPlugin* m_owner;
     mutable std::mutex m_mutex;
-    std::wstring m_labelText;
     std::wstring m_valueText;
     std::wstring m_tooltipText;
     std::atomic<bool> m_requestRefresh{false};
