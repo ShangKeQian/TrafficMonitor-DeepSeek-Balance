@@ -47,7 +47,10 @@ const wchar_t* CDeepSeekItem::GetItemId() const
 
 const wchar_t* CDeepSeekItem::GetItemLableText() const
 {
+    // 诊断：始终返回余额，确保不是 DLL 缓存问题
     std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_labelText == L"---")
+        return L"尚未获取数据";
     return m_labelText.c_str();
 }
 
