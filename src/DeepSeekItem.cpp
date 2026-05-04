@@ -39,7 +39,7 @@ void CDeepSeekItem::SetTooltipText(const std::wstring& text)
 
 const wchar_t* CDeepSeekItem::GetItemName() const
 {
-    return L"DS";
+    return L"DeepSeek 余额";
 }
 
 const wchar_t* CDeepSeekItem::GetItemId() const
