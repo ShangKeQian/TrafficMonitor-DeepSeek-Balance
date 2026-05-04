@@ -3,7 +3,7 @@
 
 CDeepSeekItem::CDeepSeekItem(CDeepSeekPlugin* owner)
     : m_owner(owner)
-    , m_labelText(L"等待首次刷新...")
+    , m_labelText(L"---")
     , m_valueText(L"")
 {
 }
@@ -13,16 +13,14 @@ void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool s
     std::lock_guard<std::mutex> lock(m_mutex);
     wchar_t buf[128];
 
-    // 第一行：余额 → Label；第二行：消耗 → Value
-    swprintf_s(buf, L"¥%.2f", balance);
-    m_labelText = buf;
-
+    // 两行全部放入 label，value 留空
     if (show_consumption && consumption > 0.01) {
-        swprintf_s(buf, L"(-¥%.2f)", consumption);
-        m_valueText = buf;
+        swprintf_s(buf, L"¥%.2f\n(-¥%.2f)", balance, consumption);
     } else {
-        m_valueText = L"";
+        swprintf_s(buf, L"¥%.2f", balance);
     }
+    m_labelText = buf;
+    m_valueText = L"";
 }
 
 void CDeepSeekItem::SetStatusText(const wchar_t* text)
@@ -39,7 +37,7 @@ void CDeepSeekItem::SetTooltipText(const std::wstring& text)
 
 const wchar_t* CDeepSeekItem::GetItemName() const
 {
-    return L"DeepSeek 余额";
+    return L"余额";
 }
 
 const wchar_t* CDeepSeekItem::GetItemId() const
