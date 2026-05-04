@@ -28,7 +28,7 @@ cmake ..
 cmake --build . --config Release
 ```
 
-输出：`build/out/DeepSeekPlugin.dll`
+输出：`build/out/Release/DeepSeekPlugin.dll`
 
 无外部依赖，仅需 Windows SDK + CMake + MSVC。
 
