@@ -8,32 +8,20 @@ CDeepSeekItem::CDeepSeekItem(CDeepSeekPlugin* owner)
 {
 }
 
-void CDeepSeekItem::UpdateDisplayText(const std::wstring& label, double balance, double consumption, bool show_consumption)
+void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool show_consumption)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     wchar_t buf[128];
 
-    if (label.empty()) {
-        // 无标签：余额作为第一行，消耗作为第二行
-        if (show_consumption && consumption > 0.01) {
-            swprintf_s(buf, L"¥%.2f", balance);
-            m_labelText = buf;
-            swprintf_s(buf, L"(-¥%.2f)", consumption);
-            m_valueText = buf;
-        } else {
-            swprintf_s(buf, L"¥%.2f", balance);
-            m_labelText = buf;
-            m_valueText = L"";
-        }
-    } else {
-        // 有标签：标签第一行，余额和消耗作为后续行
-        m_labelText = label;
-        if (show_consumption && consumption > 0.01) {
-            swprintf_s(buf, L"¥%.2f\n(-¥%.2f)", balance, consumption);
-        } else {
-            swprintf_s(buf, L"¥%.2f", balance);
-        }
+    // 第一行：余额 → Label；第二行：消耗 → Value
+    swprintf_s(buf, L"¥%.2f", balance);
+    m_labelText = buf;
+
+    if (show_consumption && consumption > 0.01) {
+        swprintf_s(buf, L"(-¥%.2f)", consumption);
         m_valueText = buf;
+    } else {
+        m_valueText = L"";
     }
 }
 
