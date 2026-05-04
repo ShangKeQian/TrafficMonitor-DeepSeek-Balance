@@ -23,12 +23,16 @@ public:
     const wchar_t* GetItemLableText() const override;
     const wchar_t* GetItemValueText() const override;
     const wchar_t* GetItemValueSampleText() const override;
+    bool IsCustomDraw() const override;
+    int GetItemWidth() const override;
+    void DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode) override;
     int OnMouseEvent(MouseEventType type, int x, int y, void* hWnd, int flag) override;
 
 private:
     CDeepSeekPlugin* m_owner;
     mutable std::mutex m_mutex;
-    std::wstring m_valueText;
+    std::wstring m_line1;
+    std::wstring m_line2;
     std::wstring m_tooltipText;
     std::atomic<bool> m_requestRefresh{false};
 };
