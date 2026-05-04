@@ -72,7 +72,7 @@ bool CDeepSeekItem::IsCustomDraw() const
 
 int CDeepSeekItem::GetItemWidth() const
 {
-    return 64;
+    return 56;
 }
 
 void CDeepSeekItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
