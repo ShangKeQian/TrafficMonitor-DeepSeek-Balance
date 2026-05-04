@@ -19,7 +19,7 @@ void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool s
 
     // 第二行：消耗
     if (show_consumption && consumption > 0.01) {
-        swprintf_s(buf, L"(-¥%.2f)", consumption);
+        swprintf_s(buf, L"(¥%.2f)", consumption);
         m_line2 = buf;
     } else {
         m_line2 = L"";
@@ -72,8 +72,7 @@ bool CDeepSeekItem::IsCustomDraw() const
 
 int CDeepSeekItem::GetItemWidth() const
 {
-    // 足够显示 "¥888.88" 约 80px
-    return 80;
+    return 64;
 }
 
 void CDeepSeekItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
