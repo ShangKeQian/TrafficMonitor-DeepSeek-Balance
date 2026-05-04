@@ -19,7 +19,7 @@
 1. 从 [Releases](../../releases) 下载 `DeepSeekPlugin.dll`
 2. 放到 TrafficMonitor 安装目录下的 `plugins` 文件夹
 3. 重启 TrafficMonitor
-4. 右键菜单 → 其他功能 → 插件管理 → DeepSeek 余额 → 选项，设置 API Key
+4. 右键菜单 → 常规设置 → 插件管理 → DeepSeek 余额 → 选项，设置 API Key
 
 ## 获取 API Key
 
