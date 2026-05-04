@@ -13,14 +13,16 @@ void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool s
     std::lock_guard<std::mutex> lock(m_mutex);
     wchar_t buf[128];
 
-    // 两行全部放入 label，value 留空
-    if (show_consumption && consumption > 0.01) {
-        swprintf_s(buf, L"¥%.2f\n(-¥%.2f)", balance, consumption);
-    } else {
-        swprintf_s(buf, L"¥%.2f", balance);
-    }
+    // label=余额行1，value=消耗行2
+    swprintf_s(buf, L"¥%.2f", balance);
     m_labelText = buf;
-    m_valueText = L"";
+
+    if (show_consumption && consumption > 0.01) {
+        swprintf_s(buf, L"(-¥%.2f)", consumption);
+        m_valueText = buf;
+    } else {
+        m_valueText = L"";
+    }
 }
 
 void CDeepSeekItem::SetStatusText(const wchar_t* text)
@@ -37,7 +39,7 @@ void CDeepSeekItem::SetTooltipText(const std::wstring& text)
 
 const wchar_t* CDeepSeekItem::GetItemName() const
 {
-    return L"余额";
+    return L"DS";
 }
 
 const wchar_t* CDeepSeekItem::GetItemId() const
@@ -47,10 +49,7 @@ const wchar_t* CDeepSeekItem::GetItemId() const
 
 const wchar_t* CDeepSeekItem::GetItemLableText() const
 {
-    // 诊断：始终返回余额，确保不是 DLL 缓存问题
     std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_labelText == L"---")
-        return L"尚未获取数据";
     return m_labelText.c_str();
 }
 

@@ -84,6 +84,7 @@ void CDeepSeekPlugin::DataRequired()
 void CDeepSeekPlugin::DoFetch()
 {
     if (m_config.api_key.empty()) {
+        m_item.UpdateDisplayText(0.0, 0.0, false);
         m_item.SetStatusText(L"未配置");
         m_item.SetTooltipText(L"DeepSeek API 余额\n请右键 → 插件管理 → 选项设置 API Key");
         return;
