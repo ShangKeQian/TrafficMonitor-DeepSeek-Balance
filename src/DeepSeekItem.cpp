@@ -18,7 +18,7 @@ void CDeepSeekItem::UpdateDisplayText(double balance, double consumption, bool s
     m_line1 = buf;
 
     // 第二行：消耗
-    if (show_consumption && consumption > 0.01) {
+    if (show_consumption) {
         swprintf_s(buf, L"(¥%.2f)", consumption);
         m_line2 = buf;
     } else {
