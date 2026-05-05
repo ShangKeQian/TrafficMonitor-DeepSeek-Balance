@@ -32,12 +32,20 @@ static void CreateConfigControls(HWND hDlg)
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
         14, 124, 300, 20, hDlg, (HMENU)104, hInst, nullptr);
 
+    CreateWindowW(L"STATIC", L"消耗统计周期:",
+        WS_CHILD | WS_VISIBLE, 14, 152, 200, 16, hDlg, nullptr, hInst, nullptr);
+    HWND hCombo = CreateWindowW(L"COMBOBOX", L"",
+        WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
+        14, 170, 200, 120, hDlg, (HMENU)106, hInst, nullptr);
+    SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"本次运行消耗");
+    SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"每次调用消耗");
+
     CreateWindowW(L"BUTTON", L"确定",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        148, 160, 80, 26, hDlg, (HMENU)IDOK, hInst, nullptr);
+        148, 200, 80, 26, hDlg, (HMENU)IDOK, hInst, nullptr);
     CreateWindowW(L"BUTTON", L"取消",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-        236, 160, 80, 26, hDlg, (HMENU)IDCANCEL, hInst, nullptr);
+        236, 200, 80, 26, hDlg, (HMENU)IDCANCEL, hInst, nullptr);
 }
 
 // ---- CDeepSeekPlugin 单例 ----
@@ -189,6 +197,8 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
                     if (pCtx->cfg->refresh_interval < 10) pCtx->cfg->refresh_interval = 10;
                     pCtx->cfg->show_consumption =
                         (SendDlgItemMessage(hWnd, 104, BM_GETCHECK, 0, 0) == BST_CHECKED);
+                    pCtx->cfg->consumption_period =
+                        (int)SendDlgItemMessage(hWnd, 106, CB_GETCURSEL, 0, 0);
                     pCtx->changed = true;
                     DestroyWindow(hWnd);
                     return 0;
@@ -210,7 +220,7 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
 
     HWND hDlg = CreateWindowExW(0, L"DeepSeekConfigDlg", L"DeepSeek 插件设置",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
-        CW_USEDEFAULT, CW_USEDEFAULT, 340, 230,
+        CW_USEDEFAULT, CW_USEDEFAULT, 340, 260,
         (HWND)hParent, nullptr, GetModuleHandle(nullptr), &ctx);
 
     if (!hDlg) return OR_OPTION_NOT_PROVIDED;
@@ -224,6 +234,7 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     SendDlgItemMessage(hDlg, 103, UDM_SETRANGE, 0, MAKELPARAM(3600, 10));
     SendDlgItemMessage(hDlg, 104, BM_SETCHECK,
         m_config.show_consumption ? BST_CHECKED : BST_UNCHECKED, 0);
+    SendDlgItemMessage(hDlg, 106, CB_SETCURSEL, m_config.consumption_period, 0);
 
     if (hParent) {
         RECT rcParent, rcDlg;
