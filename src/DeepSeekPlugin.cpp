@@ -7,6 +7,24 @@
 
 #pragma comment(lib, "comctl32.lib")
 
+// 创建系统标准对话框字体（Segoe UI / MS Shell Dlg）
+static HFONT CreateDialogFont()
+{
+    NONCLIENTMETRICSW ncm = { sizeof(ncm) };
+    if (SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0))
+        return CreateFontIndirectW(&ncm.lfMessageFont);
+    return (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+}
+
+// 将字体应用到窗口及其所有子控件
+static void ApplyFontToAll(HWND hDlg, HFONT hFont)
+{
+    SendMessageW(hDlg, WM_SETFONT, (WPARAM)hFont, TRUE);
+    for (HWND hChild = GetWindow(hDlg, GW_CHILD); hChild;
+         hChild = GetWindow(hChild, GW_HWNDNEXT))
+        SendMessageW(hChild, WM_SETFONT, (WPARAM)hFont, TRUE);
+}
+
 // 在窗口上创建所有配置控件（不使用 .rc 资源文件）
 static void CreateConfigControls(HWND hDlg)
 {
@@ -168,6 +186,7 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     struct DialogCtx {
         DeepSeekConfig* cfg;
         bool changed = false;
+        HFONT hFont = nullptr;
     } ctx;
     ctx.cfg = &m_config;
 
@@ -212,6 +231,12 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
                 DestroyWindow(hWnd);
                 return 0;
             }
+            if (msg == WM_DESTROY) {
+                if (pCtx && pCtx->hFont) {
+                    DeleteObject(pCtx->hFont);
+                    pCtx->hFont = nullptr;
+                }
+            }
             return DefWindowProcW(hWnd, msg, wParam, lParam);
         };
         if (RegisterClassExW(&wc))
@@ -219,13 +244,16 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
     }
 
     HWND hDlg = CreateWindowExW(0, L"DeepSeekConfigDlg", L"DeepSeek 插件设置",
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
-        CW_USEDEFAULT, CW_USEDEFAULT, 340, 260,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+        CW_USEDEFAULT, CW_USEDEFAULT, 340, 290,
         (HWND)hParent, nullptr, GetModuleHandle(nullptr), &ctx);
 
     if (!hDlg) return OR_OPTION_NOT_PROVIDED;
 
     CreateConfigControls(hDlg);
+
+    ctx.hFont = CreateDialogFont();
+    ApplyFontToAll(hDlg, ctx.hFont);
 
     SetDlgItemTextW(hDlg, 101, m_config.api_key.c_str());
     wchar_t buf[32];
@@ -236,14 +264,25 @@ ITMPlugin::OptionReturn CDeepSeekPlugin::ShowOptionsDialog(void* hParent)
         m_config.show_consumption ? BST_CHECKED : BST_UNCHECKED, 0);
     SendDlgItemMessage(hDlg, 106, CB_SETCURSEL, m_config.consumption_period, 0);
 
-    if (hParent) {
+    {
         RECT rcParent, rcDlg;
-        GetWindowRect((HWND)hParent, &rcParent);
+        if (hParent && IsWindow((HWND)hParent))
+            GetWindowRect((HWND)hParent, &rcParent);
+        else
+            SystemParametersInfoW(SPI_GETWORKAREA, 0, &rcParent, 0);
         GetWindowRect(hDlg, &rcDlg);
         int dlgW = rcDlg.right - rcDlg.left;
         int dlgH = rcDlg.bottom - rcDlg.top;
         int x = rcParent.left + ((rcParent.right - rcParent.left) - dlgW) / 2;
         int y = rcParent.top + ((rcParent.bottom - rcParent.top) - dlgH) / 2;
+
+        RECT workArea;
+        SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0);
+        if (x + dlgW > workArea.right)  x = workArea.right - dlgW;
+        if (y + dlgH > workArea.bottom) y = workArea.bottom - dlgH;
+        if (x < workArea.left) x = workArea.left;
+        if (y < workArea.top)  y = workArea.top;
+
         SetWindowPos(hDlg, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
     }
 
